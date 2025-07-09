@@ -1,0 +1,102 @@
+---
+title: "EDA"
+author: "Patience Heath"
+date: "2025-07-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(janitor)
+library(skimr)
+library(summarytools)
+library(devtools)
+library(knitr)
+library(stringr)
+
+data = read.csv("PSC_Survey.csv", header = TRUE)
+```
+
+
+## Missing values of the likely to leave agency question 
+```{r}
+
+data = data %>% 
+  mutate(across(
+    .cols = starts_with("A4a"),
+    .fns = ~ if_else(A4 == 3, 0, .)
+  ))
+
+## If any row that starts with A4a and is NA then 0 
+data = data %>% 
+  mutate(across(
+    .cols = starts_with("A4a"),
+    .fns = ~ if_else(is.na(.), 0, .)
+  ))
+
+skim(data)
+head(data)
+```
+
+
+1. Rename all the questions 
+2. Take care of missing values 
+
+## Renaming the questions so that its more clear but we don't need to do this. I just didn't want to keep going back and forth from the question ID. Renaming to vauge summary of the questions.
+
+
+```{r}
+subset = data %>% dplyr::select(starts_with("A"))
+subset = subset %>% 
+  rename(
+    job_satisfaction_level = A1a,
+    agency_satisfaction_level = A1b,
+    skills_knowledge_abilities = A2a,
+    clarity_duties_responsibilities = A2b,
+    contribution_to_agency_objectives = A2c,
+    authority_job_effectively = A2d, 
+    sufficiently_challenged_work = A2e,
+    recongnised_contribution = A2f, 
+    satisfaction_career_progression = A2g, 
+    proud_to_work_public_sector = A2h, 
+    agency_well_managed = A3a,
+    change_well_managed = A3b,
+    effective_senior_leadership = A3c, 
+    technological_advances_for_clients = A3d, 
+    recruitment_promotion_fairness = A3e, 
+    workplace_work_life_balance = A3f, 
+    flexible_work_arrangements = A3g, 
+    agency_commitment_health_wellbeing = A3h, 
+    personal_attachment_to_agency = A3i,
+    agency_motivation_to_achieve_objectives = A3j,
+    agency_inspiration_to_work = A3k,
+    proud_to_work_at_agency = A3l,
+    recommend_agency_to_others = A3m,
+    likely_to_leave_agency = A4,
+    work_for_another_agency = A4ai, 
+    work_federal_local_government = A4aii, 
+    work_private_sector = A4aiii,
+    not_for_profit_sector = A4aiv, 
+    study_full_time = A4av,
+    retire = A4avi,
+    other = A4avii)
+```
+Most of the questions have a completition rate of over 97%. But we are going to remove all of the missing values. 
+
+```{r}
+df = na.omit(subset)
+dim(df)
+dim(subset)
+```
+
+
+```{r}
+skim(df)
+```
+
+```{r}
+
+```
+
+
