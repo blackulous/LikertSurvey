@@ -14,6 +14,8 @@ library(summarytools)
 library(devtools)
 library(knitr)
 library(stringr)
+library(ggplot2)
+library(corrplot)
 
 data = read.csv("PSC_Survey.csv", header = TRUE)
 ```
@@ -82,6 +84,7 @@ subset = subset %>%
     retire = A4avi,
     other = A4avii)
 ```
+
 Most of the questions have a completition rate of over 97%. But we are going to remove all of the missing values. 
 
 ```{r}
@@ -94,9 +97,200 @@ dim(subset)
 ```{r}
 skim(df)
 ```
+### Exploratory Data Analysis 
 
-```{r}
+#### How do employees perceive ongoing changes within the public sector environment?
+
+The questions I chose to focus on for this  
+**agency_motivation_to_achieve_objectives:** My agency motivates me to help it achieve its objectives
+**change_well_managed:** Change is managed well in my agency
+**agency_well_managed:** I feel that my agency on the whole is well managed
+**technological_advances_for_clients:** My agency uses  technological advances to improve service design and delivery to customers/clients
+
+
+## Figure 1
+
+```{r, echo = FALSE}
+df %>% select(change_well_managed) %>% group_by(change_well_managed) %>% summarize(total = n()) %>%
+  mutate(percentage = round((total / sum(total)) * 100 ,1)) 
+
+df %>% select(change_well_managed) %>% mutate(groups = case_when(
+  change_well_managed <= 3 ~ "agree",
+  change_well_managed == 4 ~ "neutral",
+  change_well_managed < 8 ~ "disagree",
+  change_well_managed == 8 ~ "don't know"
+)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes Towards Change Managment in Agency Response Counts")
 
 ```
+
+Looking at the Response Key we can further separate the responses into 4 separate categories. This allows us to see more plainly how the employees feel. 
+
+According to this bar plot we can see that respondents agreed that changed is well managed. There is still a good amount of respondents that disagreed about change being well managed.
+
+
+## Figure 2 
+
+```{r, echo = FALSE}
+df %>% select(agency_well_managed) %>% mutate(groups = case_when(
+  agency_well_managed <= 3 ~ "agree",
+  agency_well_managed == 4 ~ "neutral",
+  agency_well_managed < 8 ~ "disagree",
+  agency_well_managed == 8 ~ "don't know"
+)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes Towards Agency Management Response Counts")
+
+```
+According to this bar plot respondents overwhelming agree that their agency is well managed.
+
+## figure 3
+
+```{r}
+df %>% select(technological_advances_for_clients) %>% mutate(groups = case_when(
+  technological_advances_for_clients <= 3 ~ "agree",
+  technological_advances_for_clients == 4 ~ "neutral",
+  technological_advances_for_clients < 8 ~ "disagree",
+  technological_advances_for_clients == 8 ~ "don't know"
+)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes To Technological Advances For Clients Response Counts")
+```
+According to this bar plot an overwhelming majority of respondents believe that their agency is doing a good job in advancing their technologies to improve service design to customers/clients.
+
+## Final conclusions based on observational summaries 
+
+Respondents believe that their respective agencies are generally well-managed and mindful of the advances in technology, properly utilizing these advances to service their clients. However, despite this positive outlook, responses are nearly split on whether change itself is being managed well within these agencies. This implies that while the overall infrastructure and client-facing operations are perceived positively by respondents, internal change processes may lack the same consistency or support. This leads to a mix in perceptions as shown in figure 1.
+
+
+
+### How does perceived job growth potential influence employee retention
+
+Variables related to question.
+A4 = Likely to leave agency. **likely_to_leave_agency**
+A2b = Skill knowledge and abilities, **clarity_duties_responsibilities**
+A3e = Recruitment and promotion decisions in my agency are fair **recruitment_promotion_fairness**
+A2e = Sufficiently challenged by my work. **sufficiently_challenged_work**
+A2g = I am satisfied with the opportunities available to me for career progression in my current agency **satisfaction_career_progression**
+
+
+## figure 4
+
+```{r}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% 
+  ggplot(aes(x = groups)) + geom_bar(fill = "salmon") + theme_bw() + ggtitle("Employee Retention")
+```
+According to the graph an overwhelming majority of respondents plan on staying in their agency.
+
+
+## figure 5
+
+```{r, echo = FALSE}
+df %>%  mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(sufficiently_challenged_work) %>% mutate(groups = case_when(
+  sufficiently_challenged_work <= 3 ~ "agree",
+  sufficiently_challenged_work == 4 ~ "neutral",
+  sufficiently_challenged_work < 8 ~ "disagree",
+  sufficiently_challenged_work == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + ggtitle("Employees Leaving Agency Thoughts on Work Challenges") + theme_minimal()
+```
+
+## figure 6 
+
+```{r, echo = FALSE}
+df %>%  mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(sufficiently_challenged_work) %>% mutate(groups = case_when(
+  sufficiently_challenged_work <= 3 ~ "agree",
+  sufficiently_challenged_work == 4 ~ "neutral",
+  sufficiently_challenged_work < 8 ~ "disagree",
+  sufficiently_challenged_work == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + ggtitle("Employees Staying in Agency Thoughts on Work Challenges") + theme_minimal()
+```
+
+Figure 5 includes respondents who plan to leave their agency, while Figure 6 includes those who do not plan to leave. There is a notable difference between the two: in Figure 5, only around 60% of respondents feel their agency sufficiently challenges them, whereas in Figure 6, over 80% feel sufficiently challenged.
+
+This suggests a possible relationship between feeling challenged at work and employee retention. Specifically, when respondents feel challenged, they may be more likely to consider leaving. In other words, feeling sufficiently challenged may contribute to greater likelihood of departure.
+
+
+
+## Figure 7
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(satisfaction_career_progression) %>% mutate(groups = case_when(
+                                   satisfaction_career_progression <= 3 ~ "agree",
+                                   satisfaction_career_progression == 4 ~ "neutral",
+                                   satisfaction_career_progression < 8 ~ "disagree",
+                                   satisfaction_career_progression == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
+```
+
+## Figure 8 
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(satisfaction_career_progression) %>% mutate(groups = case_when(
+                                   satisfaction_career_progression <= 3 ~ "agree",
+                                   satisfaction_career_progression == 4 ~ "neutral",
+                                   satisfaction_career_progression < 8 ~ "disagree",
+                                   satisfaction_career_progression == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
+```
+
+Figure 7 displays responses from individuals who do not plan on leaving their agency, while Figure 8 shows responses from those who do. There is a clear contrast in satisfaction with career progression between the two groups. Nearly 60% of respondents who plan to stay with their agency report being satisfied with their career progression. In contrast, about 60% of those who plan to leave indicate dissatisfaction with their career progression in some form.
+
+This suggests that perceived career advancement opportunities may play a significant role in an employee’s decision to remain with or leave an agency.
+
+
+
+## Figure 9
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(recruitment_promotion_fairness) %>% mutate(groups = case_when(
+                                    recruitment_promotion_fairness <= 3 ~ "agree",
+                                   recruitment_promotion_fairness == 4 ~ "neutral",
+                                   recruitment_promotion_fairness < 8 ~ "disagree",
+                                   recruitment_promotion_fairness == 8 ~ "don't know"
+                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
+                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
+```
+
+## Figure 10
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(recruitment_promotion_fairness) %>% mutate(groups = case_when(
+                                    recruitment_promotion_fairness <= 3 ~ "agree",
+                                   recruitment_promotion_fairness == 4 ~ "neutral",
+                                   recruitment_promotion_fairness < 8 ~ "disagree",
+                                   recruitment_promotion_fairness == 8 ~ "don't know"
+                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
+                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
+```
+
+Figure 9 displays responses from individuals who do not plan to leave their agency, while Figure 10 reflects responses from those who do. Once again, a clear contrast emerges: approximately 60% of respondents who plan to stay agree that recruitment and promotion decisions within their agency are fair. In comparison, nearly 50% of respondents who plan to leave disagree with the fairness of these decisions.
+
+This also suggests that perceptions of fairness in recruitment and promotion processes may influence an employee’s decision to remain with or leave an agency.
+
+## Figure 11
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(clarity_duties_responsibilities) %>% mutate(groups = case_when(
+                                    clarity_duties_responsibilities <= 3 ~ "agree",
+                                   clarity_duties_responsibilities == 4 ~ "neutral",
+                                   clarity_duties_responsibilities < 8 ~ "disagree",
+                                   clarity_duties_responsibilities == 8 ~ "don't know"
+                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
+                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
+```
+
+## Figure 12
+
+```{r, echo = FALSE}
+df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
+                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(clarity_duties_responsibilities) %>% mutate(groups = case_when(
+                                    clarity_duties_responsibilities <= 3 ~ "agree",
+                                   clarity_duties_responsibilities == 4 ~ "neutral",
+                                   clarity_duties_responsibilities < 8 ~ "disagree",
+                                   clarity_duties_responsibilities == 8 ~ "don't know"
+                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
+                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
+```
+
+There is no major difference between the two figures overall, indicating that most respondents—regardless of whether they plan to leave their agency—generally agree that their job duties and responsibilities are clear. However, one slight distinction is that a higher proportion of respondents who plan to leave their agency (nearly 20%) disagree that there is clarity in their duties, compared to only about 7% of those who plan to stay. This suggests that while clarity in job responsibilities is largely seen as a strength across the board, a lack of clarity may still contribute to some employees' intent to leave.
 
 
