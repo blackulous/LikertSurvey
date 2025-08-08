@@ -16,6 +16,7 @@ library(knitr)
 library(stringr)
 library(ggplot2)
 library(corrplot)
+library(psych)
 
 data = read.csv("PSC_Survey.csv", header = TRUE)
 ```
@@ -162,15 +163,15 @@ Respondents believe that their respective agencies are generally well-managed an
 
 To explore this question, I focused on five survey items that collectively captured perceived job growth potential and employee retention directly.
 A4 = Likely to leave agency. **likely_to_leave_agency**
-A2b = Skill knowledge and abilities, **clarity_duties_responsibilities**
+A2b = I am clear what my duties and responsibilities are, **clarity_duties_responsibilities**
 A3e = Recruitment and promotion decisions in my agency are fair **recruitment_promotion_fairness**
 A2e = Sufficiently challenged by my work. **sufficiently_challenged_work**
 A2g = I am satisfied with the opportunities available to me for career progression in my current agency **satisfaction_career_progression**
 
+These items were selected because they each represent a key dimension of either job growth potential or employee retention. The first item directly measures intent to leave, asking if employees plan to stay in their agency or leave within a certain time frame. The second item address role clarity, uncertainty about duties may lower confidence in an employees career path and, by extension, retention. The third item captures perceived fairness in advancement opportunities, which directly affects employees' views on long-term growth within the agency. The fourth item considers whether employees feel challenged in their roles, which often is a prerequisite for development and growth. Finally, the fifth item measures overall satisfaction with career progression, which can also be a factor in whether employees choose to remain or leave.
 
 
-
-## figure 4
+## Figure 4
 
 ```{r}
 df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
@@ -204,7 +205,7 @@ df %>%  mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
 
 Figure 5 includes respondents who plan to leave their agency, while Figure 6 includes those who do not plan to leave. There is a notable difference between the two: in Figure 5, only around 60% of respondents feel their agency sufficiently challenges them, whereas in Figure 6, over 80% feel sufficiently challenged.
 
-This suggests a possible relationship between feeling challenged at work and employee retention. Specifically, when respondents feel challenged, they may be more likely to consider leaving. In other words, feeling sufficiently challenged may contribute to greater likelihood of departure.
+This suggests a possible relationship between feeling challenged at work and employee retention. Specifically, when respondents feel challenged, they may be more likely to consider leaving. Pointing towards agreeing with the statement that feeling sufficiently challenged may contribute to greater likelihood of departure.
 
 
 
@@ -262,7 +263,7 @@ df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
                                                                                                  round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
 ```
 
-Figure 9 displays responses from individuals who do not plan to leave their agency, while Figure 10 reflects responses from those who do. Once again, a clear contrast emerges: approximately 60% of respondents who plan to stay agree that recruitment and promotion decisions within their agency are fair. In comparison, nearly 50% of respondents who plan to leave disagree with the fairness of these decisions.
+Figure 9 displays responses from individuals who do not plan to leave their agency, while Figure 10 reflects responses from those who do. Once again, a clear contrast appears: approximately 60% of respondents who plan to stay agree that recruitment and promotion decisions within their agency are fair. In comparison, nearly 50% of respondents who plan to leave disagree with the fairness of these decisions.
 
 This also suggests that perceptions of fairness in recruitment and promotion processes may influence an employee’s decision to remain with or leave an agency.
 
@@ -309,6 +310,9 @@ df %>% mutate(groups = case_when(workplace_work_life_balance <= 3 ~ "agree",
                                  workplace_work_life_balance > 4 ~ "disagree",
                                  TRUE ~ "don't know")) %>% filter(personal_attachment_to_agency <= 3) %>% select(personal_attachment_to_agency, groups) %>% group_by(groups) %>% summarise(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
 ```
+Respondents who have a personal attachment to their agency tend to overwhelming agree that they have a good work life balance.
+
+
 
 ## Figure 14
 
@@ -317,7 +321,9 @@ df %>% mutate(groups = case_when(workplace_work_life_balance <= 3 ~ "agree",
                                  workplace_work_life_balance > 4 ~ "disagree",
                                  TRUE ~ "don't know")) %>% filter(personal_attachment_to_agency > 4) %>% select(personal_attachment_to_agency, groups) %>% group_by(groups) %>% summarise(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
 ```
-when they dont have a strong personal attachment to agency they don't believe that have a strong worklife balance opposite for previous figure 
+When respondents don't have a strong personal attachment to agency they also don't believe that have a strong work life balance opposite for previous figure. This suggests that work-life balance as an influence on the thoughts and opinions of respondents and with more work life balance employees feel more attached and fulfilled to their agency. 
+
+
 
 ## Figure 15
 ```{r, echo = FALSE}
@@ -334,6 +340,8 @@ df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
                                  TRUE ~ "don't know")) %>% filter(flexible_work_arrangements > 4) %>% select(groups,flexible_work_arrangements) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) +
   geom_bar(stat = "identity") + theme_minimal()
 ```
+
+These two figures illustrate how flexible work arrangements affect how attached employees are to their agency. When respondents are attached to their agency, *Figure 15*, they tend to overwhelmingly agree that they have flexibility in their work arrangements. In contrast, respondents who deem to have little to no flexibility in their work arrangements the relationship is not as clear cut. Their responses regarding agency attachment are more evenly distributed. Approximately *36% agree*, *41% agree*, and *21% are unsure* about feeling personally attached to their agency. This tells us that although flexibility is positively associated with agency attachment, lack of flexibility doesn't uniformly lead to detachment.
 
 ## Figure 17
 
@@ -353,4 +361,27 @@ df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
   geom_bar(stat = "identity") + theme_minimal()
 ```
 
+The two figures above illustrate that personal attachment to an agency is closely linked to whether employees perceive their agency as being committed to health and well-being in the workplace. In **Figure 17**, a clear majority of respondents who believe their agency is committed to their health and well-being also report feeling personally attached to their agency. While figure 18 shows us a different picture with 51% of respondents having no personal attachment to their agency when filtered on if their agency is committed to their health and wellbeing. This suggests that when employees feel their well-being is valued, they are more likely to develop a stronger sense of attachment to their organization. 
+
+
+### Factor Analysis 
+
+
+```{r}
+lambda = c(.717, .539, .608, .793, .766, .768, .601, .595, .555, .708, .772, .761, .753, .796)
+lambda_squared = lambda^2
+epsilon = 1 -lambda_squared 
+
+sum_lambda = sum(lambda)
+sum_lambda_squared = sum(lambda_squared)
+sum_epsilon = sum(epsilon)
+
+N = length(lambda)
+average_variance_extracted = sum_lambda_squared / N
+average_variance_extracted
+composite_reliability = sum_lambda^2/(sum_lambda^2 + sum_epsilon)
+composite_reliability
+
+
+```
 
