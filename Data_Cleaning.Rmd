@@ -17,6 +17,8 @@ library(stringr)
 library(ggplot2)
 library(corrplot)
 library(psych)
+library(car)
+library(factoextra)
 
 data = read.csv("PSC_Survey.csv", header = TRUE)
 ```
@@ -50,8 +52,9 @@ head(data)
 
 
 ```{r}
-subset = data %>% dplyr::select(starts_with("A"))
-subset = subset %>% 
+a_questions = data %>% dplyr::select(starts_with("A"))
+saveRDS(a_questions, file = "A_questions.rds")
+subset = a_questions %>% 
   rename(
     job_satisfaction_level = A1a,
     agency_satisfaction_level = A1b,
@@ -364,7 +367,7 @@ df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
 The two figures above illustrate that personal attachment to an agency is closely linked to whether employees perceive their agency as being committed to health and well-being in the workplace. In **Figure 17**, a clear majority of respondents who believe their agency is committed to their health and well-being also report feeling personally attached to their agency. While figure 18 shows us a different picture with 51% of respondents having no personal attachment to their agency when filtered on if their agency is committed to their health and wellbeing. This suggests that when employees feel their well-being is valued, they are more likely to develop a stronger sense of attachment to their organization. 
 
 
-### Factor Analysis 
+### SPSS results AVE and CR 
 
 
 ```{r}
@@ -383,5 +386,171 @@ composite_reliability = sum_lambda^2/(sum_lambda^2 + sum_epsilon)
 composite_reliability
 
 
+```
+
+
+### Determinant score
+
+The reason why we calculate the determinant score is to identify if multicollinearity is present. Multicollinearity essentially means that some variables are redundant because they share too much variance. This makes significant variables in our study appear statistically insignificant. Why? When variables share too much variance and this makes it confusing to tell them apart. This messes up how we are able to predict what variables are contributing essentially forcing the model to split in a way that's nearly impossible to differentiate from. 
+
+Looking at the determinant value we can see that it is less than 0.0001, meaning that some of the variables are highly correlated with each other. Lets do some investigation into why that is the case and see if we can make some changes.
+
+Below I pulled up the correlations to identify the pairs of variables where the correlation coefficient r > 0.8. 
+The variables that are highly correlated are:
+**A3a,  A3b,  A3c**
+**A3j and A3m**
+**A3k with A3m**
+**A3l with A3m**
+
+We can get rid of A3c and A3b. A3a encompasses all the information for those two variables 
+We can also get rid of A3m because it is highly correlated with the other variables (A3j,A3k, A3L) but those variables aren't highly correlated with each other.
+
+```{r, echo = FALSE }
+a_questions = na.omit(a_questions)
+factor_subset = a_questions[1:24]
+r = cor(factor_subset)
+determinant_value = det(r)
+determinant_value
+head(r)
+```
+
+iterate.. 
+
+```{r, echo = FALSE}
+det_subset = factor_subset %>% select(-c("A3c" , "A3b", "A3m"))
+r = cor(det_subset)
+det(r)
+```
+
+The determinant of the correlation matrix is 8.908885e-07. This tells us there is still a high degree of shared variance although we got rid of some redundant variables. This is better than our original determinant score of 1.293969e-09.
+
+```{r, echo = FALSE}
+det_subset2 = det_subset %>% select(-c("A3j"))
+r = cor(det_subset2)
+det(r)
+```
+
+
+### KMO Statistic and Barletts test
+
+Despite the low determinant score the KMO test which measures the suitability of the data for factor analysis is greater than 0.6. The P value of Bartlett test is < 0.05 which also indicates that a factor analysis may be worthwhile for the dataset. 
+
+```{r, echo = FALSE}
+KMO(r)
+cortest.bartlett(r, n = nrow(det_subset2))
+```
+## Scree test PCA 
+
+Looking at the scree plot 3 components seem to suffice. 
+
+```{r, echo = FALSE}
+scree(r)
+```
+## factor analysis with oblimin rotation
+
+```{r, echo = FALSE}
+oblimin_rotation = principal(r, nfactors = 3, rotate = "oblimin", n.obs = nrow(det_subset2))
+oblimin_rotation
+```
+
+## Factor analysis with varimax rotation
+
+```{r, echo = FALSE}
+principal(r, nfactors = 3, rotate = "varimax", n.obs = nrow(det_subset2))
+```
+## Average variance extracted and CR for varimax rotation 
+
+### Factor 1
+
+```{r, echo = FALSE}
+lambda = c(0.63, 0.53, 0.67, 0.64, 0.75, 0.72, 0.71, 0.76)
+ave_cr(lambda)
+```
+### Factor 2 
+
+```{r, echo = FALSE}
+lambda = c(0.67, 0.80, 0.74, 0.71, 0.66, 0.73, 0.53)
+ave_cr(lambda)
+```
+### Factor 3
+
+```{r, echo = FALSE}
+lambda = c(0.81, 0.83, 0.72)
+ave_cr(lambda)
+```
+
+
+# Confirming Validity 
+
+
+
+## Cronbachs alpha 
+
+Cronbach's alpha shows the internal consistency and measures the accuracy and reliability. This shows us that the variables have a correlation with their component grouping which means they are internally consistent.
+
+All the alpha values greater than 0.7 which confirms that the variables are internally consistent. 
+
+Alpha values are displayed in order factor 1, factor 2, factor 3.
+
+
+```{r, echo = FALSE}
+factor_1 = det_subset2 %>% select(c("A1b", "A2h", "A3a", "A3d", "A3e", "A3i", "A3k", "A3l", "A4"))
+factor_2 = det_subset2 %>% select(c("A1a", "A2a", "A2b", "A2c", "A2d", "A2e"))
+factor_3 = det_subset2 %>% select(c("A3f", "A3g", "A3h"))
+
+alpha_1 = alpha(factor_1, check.keys = TRUE)
+alpha_1 = alpha_1$total[1]
+
+alpha_2 = alpha(factor_2)
+alpha_2 = alpha_2$total[1]
+
+alpha_3 = alpha(factor_3)
+alpha_3 = alpha_3$total[1]
+
+list(factor_1_alpha = alpha_1, 
+     factor_2_alpha = alpha_2, 
+     factor_3_alpha = alpha_3)
+```
+
+
+## Average variance extracted and CR for oblimin rotation 
+
+**AVE** tells us how much of the information in the survey questions for a factor is actually explained by that factor, compared to how much is just random noise or error.
+
+**Composite Reliability ** tells us how well a group of questions work together to measure the same idea. We want a high CR because that means the questions are consistent with each other. 
+
+```{r, echo = FALSE}
+ave_cr = function(lambda) {
+  lambda_squared = lambda^2
+  epsilon = 1 -lambda_squared 
+  sum_lambda = sum(lambda)
+  sum_lambda_squared = sum(lambda_squared)
+  sum_epsilon = sum(epsilon)
+  N = length(lambda)
+  ave = sum_lambda_squared / N
+  cr = sum_lambda^2/(sum_lambda^2 + sum_epsilon)
+  return(list(AVE = ave, CR = cr ))
+}
+```
+
+### Factor 1 
+
+```{r, echo = FALSE}
+lambda = c(0.66, 0.77, 0.71, 0.55, 0.55, 0.90, 0.79, 0.78, 0.88)
+ave_cr(lambda)
+```
+
+### Factor 2
+
+```{r, echo = FALSE}
+lambda = c(0.64, 0.86, 0.83, 0.78, 0.69, 0.76)
+ave_cr(lambda)
+```
+
+### Factor 3 
+
+```{r}
+lambda = c(0.73, 0.83, 0.57)
+ave_cr(lambda)
 ```
 
