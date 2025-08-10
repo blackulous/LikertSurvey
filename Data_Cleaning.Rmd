@@ -414,8 +414,6 @@ determinant_value
 head(r)
 ```
 
-iterate.. 
-
 ```{r, echo = FALSE}
 det_subset = factor_subset %>% select(-c("A3c" , "A3b", "A3m"))
 r = cor(det_subset)
@@ -488,7 +486,7 @@ ave_cr(lambda)
 
 Cronbach's alpha shows the internal consistency and measures the accuracy and reliability. This shows us that the variables have a correlation with their component grouping which means they are internally consistent.
 
-All the alpha values greater than 0.7 which confirms that the variables are internally consistent. 
+All the alpha values are greater than 0.7 which confirms that the variables are internally consistent. 
 
 Alpha values are displayed in order factor 1, factor 2, factor 3.
 

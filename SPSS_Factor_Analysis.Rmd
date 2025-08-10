@@ -1,0 +1,97 @@
+---
+title: "SPSS_FACTOR_ANALYSIS"
+author: "Patience Heath"
+date: "2025-08-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(psych)
+a_questions = readRDS("A_questions.rds")
+
+```
+
+
+```{r}
+a_questions = na.omit(a_questions)
+factor_subset = a_questions[1:24]
+r = cor(factor_subset)
+determinant_value = det(r)
+determinant_value
+head(r)
+```
+### Iteration 1 determinant value 
+
+```{r, echo = FALSE}
+det_subset = factor_subset %>% select(-c("A3c" , "A3b", "A3m"))
+r = cor(det_subset)
+det(r)
+```
+
+### Iteration 2 determinant value 
+
+```{r}
+det_subset2 = det_subset %>% select(-c("A3j"))
+r = cor(det_subset2)
+det(r)
+```
+
+# At this point we now know what variables to use and will now move to SPSS to perform Factor Analysis. 
+**SPSS also will run Bartletts and give us the KMO statistic** 
+
+
+# Confirming Validity 
+
+### Cronbachs alpha
+
+All the alpha values are greater than 0.7 which confirms that the variables are internally consistent. 
+
+Alpha values are displayed in order factor 1, factor 2, factor 3.
+
+```{r}
+factor_1 = a_questions %>% select(c("A3i", "A3l", "A3h", "A3k", "A3a", "A1b", "A4", "A3e", "A3d"))
+factor_2 = a_questions %>% select(c("A2a", "A2b", "A2c", "A2e", "A2d", "A1a"))
+factor_3 = a_questions %>% select(c("A3g", "A3f", "A3h"))
+
+
+alpha(factor_1, check.keys = TRUE)
+alpha(factor_2, check.keys = TRUE)
+alpha(factor_3, check.keys = TRUE)
+```
+
+
+### Calculating AVE and CR scores in R based on SPSS output
+
+
+### Function to get AVE and CR scores
+
+Below is the function I made to get the average variance explained (AVE) and the composite reliability (CR) scores.
+
+Some of the AVE are low (Factor 1 and Factor 3), but since the composite reliability is higher than 0.6 for all the convergent validity of the construct is adequate.
+
+```{r, echo = FALSE}
+ave_cr
+```
+
+### AVE and CR scores for factor 1
+
+```{r, echo = FALSE}
+lambda = c(0.827, 0.822, 0.751, 0.673, 0.641, 0.610, -0.561, -0.515, 0.505)
+ave_cr(lambda)
+```
+
+### AVE and CR scores for factor 2
+
+```{r, echo = FALSE}
+lambda = c(-0.870, -0.846, -0.788, -0.768, -0.729, -0.637)
+ave_cr(lambda)
+```
+
+### AVE and CR scores for factor 3
+
+```{r, echo = FALSE}
+lambda = c(0.794, 0.727, 0.611)
+ave_cr(lambda)
+```
