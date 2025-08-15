@@ -95,3 +95,14 @@ ave_cr(lambda)
 lambda = c(0.794, 0.727, 0.611)
 ave_cr(lambda)
 ```
+## Summary Table of Reliability and Validity 
+
+```{r}
+Validity = data.frame(Metric = c("Cronbach's Alpha", "AVE", "Composite Reliability"),
+                        Factor_1 = c(0.91, 0.44, 0.73),
+                        Factor_2 = c(0.88, 0.60, 0.90),
+                        Factor_3 = c(0.88, 0.51, 0.75))
+
+Validity
+```
+
