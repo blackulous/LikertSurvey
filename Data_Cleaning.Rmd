@@ -1,5 +1,5 @@
 ---
-title: "EDA"
+title: "Data Processing"
 author: "Patience Heath"
 date: "2025-07-05"
 output: html_document
@@ -23,9 +23,11 @@ library(factoextra)
 data = read.csv("PSC_Survey.csv", header = TRUE)
 ```
 
+# Data Processing
 
 ## Missing values of the likely to leave agency question 
-```{r}
+
+```{r, echo = FALSE}
 
 data = data %>% 
   mutate(across(
@@ -44,6 +46,7 @@ skim(data)
 head(data)
 ```
 
+# Agenda
 
 1. Rename all the questions 
 2. Take care of missing values 
@@ -51,7 +54,7 @@ head(data)
 ## Renaming the questions so that its more clear but we don't need to do this. I just didn't want to keep going back and forth from the question ID. Renaming to vauge summary of the questions.
 
 
-```{r}
+```{r, echo = FALSE}
 a_questions = data %>% dplyr::select(starts_with("A"))
 saveRDS(a_questions, file = "A_questions.rds")
 subset = a_questions %>% 
@@ -91,464 +94,20 @@ subset = a_questions %>%
 
 Most of the questions have a completition rate of over 97%. But we are going to remove all of the missing values. 
 
-```{r}
+```{r, echo = FALSE}
 df = na.omit(subset)
 dim(df)
 dim(subset)
 ```
 
 
-```{r}
+```{r, echo = FALSE}
 skim(df)
-```
-### Exploratory Data Analysis 
 
-#### How do employees perceive ongoing changes within the public sector environment?
-
-To explore this question, I focused on three survey items that collectively capture employee perceptions of change within their agencies: 
-
-**change_well_managed:** "Change is managed well in my agency"
-**agency_well_managed:** "I feel that my agency on the whole is well managed"
-**technological_advances_for_clients:** "My agency uses technological advances to improve service design and delivery to customers/clients"
-
-
-I selected these questions because they each address a different idea of change. The first question reflects on respondents perceptions of change management practices, the second question offers a broader view of general agency leadership and management (this is also a driver for change), and the third question measures attitudes towards the adoption of technological advancements.
-
-## Figure 1
-
-```{r, echo = FALSE}
-## df %>% select(change_well_managed) %>% group_by(change_well_managed) %>% summarize(total = n()) %>%
-##  mutate(percentage = round((total / sum(total)) * 100 ,1)) 
-
-df %>% select(change_well_managed) %>% mutate(groups = case_when(
-  change_well_managed <= 3 ~ "agree",
-  change_well_managed == 4 ~ "neutral",
-  change_well_managed < 8 ~ "disagree",
-  change_well_managed == 8 ~ "don't know"
-)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes Towards Change Managment in Agency Response Counts")
-
-```
-According to this bar plot we can see that respondents agreed that changed is well managed. There is still a good amount of respondents that disagreed about change being well managed. As the responses are nearly split 50/50.
-
-
-## Figure 2 
-
-```{r, echo = FALSE}
-df %>% select(agency_well_managed) %>% mutate(groups = case_when(
-  agency_well_managed <= 3 ~ "agree",
-  agency_well_managed == 4 ~ "neutral",
-  agency_well_managed < 8 ~ "disagree",
-  agency_well_managed == 8 ~ "don't know"
-)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes Towards Agency Management Response Counts")
-
-```
-According to this bar plot respondents overwhelming agree that their agency is well managed.
-
-## Figure 3
-
-```{r}
-df %>% select(technological_advances_for_clients) %>% mutate(groups = case_when(
-  technological_advances_for_clients <= 3 ~ "agree",
-  technological_advances_for_clients == 4 ~ "neutral",
-  technological_advances_for_clients < 8 ~ "disagree",
-  technological_advances_for_clients == 8 ~ "don't know"
-)) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_bw() + ggtitle("Employees Attitudes To Technological Advances For Clients Response Counts")
-```
-According to this bar plot an overwhelming majority of respondents believe that their agency is doing a good job in advancing their technologies to improve service design to customers/clients.
-
-## Final conclusions based on observational summaries 
-
-Respondents believe that their respective agencies are generally well-managed and mindful of the advances in technology, properly utilizing these advances to service their clients. However, despite this positive outlook, responses are nearly split on whether change itself is being managed well within these agencies. This implies that while the overall infrastructure and client-facing operations are perceived positively by respondents, internal change processes may lack the same consistency or support. This leads to a mix in perceptions as shown in figure 1.
-
-
-
-### How does perceived job growth potential influence employee retention
-
-To explore this question, I focused on five survey items that collectively captured perceived job growth potential and employee retention directly.
-A4 = Likely to leave agency. **likely_to_leave_agency**
-A2b = I am clear what my duties and responsibilities are, **clarity_duties_responsibilities**
-A3e = Recruitment and promotion decisions in my agency are fair **recruitment_promotion_fairness**
-A2e = Sufficiently challenged by my work. **sufficiently_challenged_work**
-A2g = I am satisfied with the opportunities available to me for career progression in my current agency **satisfaction_career_progression**
-
-These items were selected because they each represent a key dimension of either job growth potential or employee retention. The first item directly measures intent to leave, asking if employees plan to stay in their agency or leave within a certain time frame. The second item address role clarity, uncertainty about duties may lower confidence in an employees career path and, by extension, retention. The third item captures perceived fairness in advancement opportunities, which directly affects employees' views on long-term growth within the agency. The fourth item considers whether employees feel challenged in their roles, which often is a prerequisite for development and growth. Finally, the fifth item measures overall satisfaction with career progression, which can also be a factor in whether employees choose to remain or leave.
-
-
-## Figure 4
-
-```{r}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% 
-  ggplot(aes(x = groups)) + geom_bar(fill = "salmon") + theme_bw() + ggtitle("Employee Retention")
-```
-According to the graph an overwhelming majority of respondents plan on staying in their agency.
-
-
-## figure 5
-
-```{r, echo = FALSE}
-df %>%  mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(sufficiently_challenged_work) %>% mutate(groups = case_when(
-  sufficiently_challenged_work <= 3 ~ "agree",
-  sufficiently_challenged_work == 4 ~ "neutral",
-  sufficiently_challenged_work < 8 ~ "disagree",
-  sufficiently_challenged_work == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + ggtitle("Employees Leaving Agency Thoughts on Work Challenges") + theme_minimal()
-```
-
-## figure 6 
-
-```{r, echo = FALSE}
-df %>%  mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(sufficiently_challenged_work) %>% mutate(groups = case_when(
-  sufficiently_challenged_work <= 3 ~ "agree",
-  sufficiently_challenged_work == 4 ~ "neutral",
-  sufficiently_challenged_work < 8 ~ "disagree",
-  sufficiently_challenged_work == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100, 1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + ggtitle("Employees Staying in Agency Thoughts on Work Challenges") + theme_minimal()
-```
-
-Figure 5 includes respondents who plan to leave their agency, while Figure 6 includes those who do not plan to leave. There is a notable difference between the two: in Figure 5, only around 60% of respondents feel their agency sufficiently challenges them, whereas in Figure 6, over 80% feel sufficiently challenged.
-
-This suggests a possible relationship between feeling challenged at work and employee retention. Specifically, when respondents feel challenged, they may be more likely to consider leaving. Pointing towards agreeing with the statement that feeling sufficiently challenged may contribute to greater likelihood of departure.
-
-
-
-## Figure 7
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(satisfaction_career_progression) %>% mutate(groups = case_when(
-                                   satisfaction_career_progression <= 3 ~ "agree",
-                                   satisfaction_career_progression == 4 ~ "neutral",
-                                   satisfaction_career_progression < 8 ~ "disagree",
-                                   satisfaction_career_progression == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
-```
-
-## Figure 8 
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(satisfaction_career_progression) %>% mutate(groups = case_when(
-                                   satisfaction_career_progression <= 3 ~ "agree",
-                                   satisfaction_career_progression == 4 ~ "neutral",
-                                   satisfaction_career_progression < 8 ~ "disagree",
-                                   satisfaction_career_progression == 8 ~ "don't know")) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
-```
-
-Figure 7 displays responses from individuals who do not plan on leaving their agency, while Figure 8 shows responses from those who do. There is a clear contrast in satisfaction with career progression between the two groups. Nearly 60% of respondents who plan to stay with their agency report being satisfied with their career progression. In contrast, about 60% of those who plan to leave indicate dissatisfaction with their career progression in some form.
-
-This suggests that perceived career advancement opportunities may play a significant role in an employee’s decision to remain with or leave an agency.
-
-
-
-## Figure 9
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(recruitment_promotion_fairness) %>% mutate(groups = case_when(
-                                    recruitment_promotion_fairness <= 3 ~ "agree",
-                                   recruitment_promotion_fairness == 4 ~ "neutral",
-                                   recruitment_promotion_fairness < 8 ~ "disagree",
-                                   recruitment_promotion_fairness == 8 ~ "don't know"
-                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
-                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
-```
-
-## Figure 10
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(recruitment_promotion_fairness) %>% mutate(groups = case_when(
-                                    recruitment_promotion_fairness <= 3 ~ "agree",
-                                   recruitment_promotion_fairness == 4 ~ "neutral",
-                                   recruitment_promotion_fairness < 8 ~ "disagree",
-                                   recruitment_promotion_fairness == 8 ~ "don't know"
-                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
-                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
-```
-
-Figure 9 displays responses from individuals who do not plan to leave their agency, while Figure 10 reflects responses from those who do. Once again, a clear contrast appears: approximately 60% of respondents who plan to stay agree that recruitment and promotion decisions within their agency are fair. In comparison, nearly 50% of respondents who plan to leave disagree with the fairness of these decisions.
-
-This also suggests that perceptions of fairness in recruitment and promotion processes may influence an employee’s decision to remain with or leave an agency.
-
-## Figure 11
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "No Plans on Leaving") %>% select(clarity_duties_responsibilities) %>% mutate(groups = case_when(
-                                    clarity_duties_responsibilities <= 3 ~ "agree",
-                                   clarity_duties_responsibilities == 4 ~ "neutral",
-                                   clarity_duties_responsibilities < 8 ~ "disagree",
-                                   clarity_duties_responsibilities == 8 ~ "don't know"
-                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
-                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
-```
-
-## Figure 12
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(likely_to_leave_agency < 3 ~ "Leaving Agency",
-                                 likely_to_leave_agency == 3 ~ "No Plans on Leaving")) %>% filter(groups == "Leaving Agency") %>% select(clarity_duties_responsibilities) %>% mutate(groups = case_when(
-                                    clarity_duties_responsibilities <= 3 ~ "agree",
-                                   clarity_duties_responsibilities == 4 ~ "neutral",
-                                   clarity_duties_responsibilities < 8 ~ "disagree",
-                                   clarity_duties_responsibilities == 8 ~ "don't know"
-                                 )) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = 
-                                                                                                 round((total/ sum(total)) * 100,1)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity") + theme_minimal()
-```
-
-There is no major difference between the two figures overall, indicating that most respondents—regardless of whether they plan to leave their agency—generally agree that their job duties and responsibilities are clear. However, one slight distinction is that a higher proportion of respondents who plan to leave their agency (nearly 20%) disagree that there is clarity in their duties, compared to only about 7% of those who plan to stay. This suggests that while clarity in job responsibilities is largely seen as a strength across the board, a lack of clarity may still contribute to some employees' intent to leave.
-
-
-##	Does stress or lack of a suitable work-life balance impact an employee’s connection to their agency?
-
-My workplace culture supports people to achieve a suitable work/life balance - A3F (1-8) variable names: **workplace_work_life_balance**
-You are able to access and use flexible work arrangements  to assist in your work/life balance - A3G (1-8) variable names: **flexible_work_arrangements**
-I feel a strong personal attachment to my agency - A3I (1-8) variable names: **personal_attachment_to_agency**
-My agency is committed to health and well being within the workplace - A3h (1-8) variable names: **agency_commitment_health_wellbeing**
-
-## Figure 13
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(workplace_work_life_balance <= 3 ~ "agree",
-                                 workplace_work_life_balance > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(personal_attachment_to_agency <= 3) %>% select(personal_attachment_to_agency, groups) %>% group_by(groups) %>% summarise(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
-```
-Respondents who have a personal attachment to their agency tend to overwhelming agree that they have a good work life balance.
-
-
-
-## Figure 14
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(workplace_work_life_balance <= 3 ~ "agree",
-                                 workplace_work_life_balance > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(personal_attachment_to_agency > 4) %>% select(personal_attachment_to_agency, groups) %>% group_by(groups) %>% summarise(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) + geom_bar(stat = "identity")
-```
-When respondents don't have a strong personal attachment to agency they also don't believe that have a strong work life balance opposite for previous figure. This suggests that work-life balance as an influence on the thoughts and opinions of respondents and with more work life balance employees feel more attached and fulfilled to their agency. 
-
-
-
-## Figure 15
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
-                                 personal_attachment_to_agency > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(flexible_work_arrangements <= 3) %>% select(groups,flexible_work_arrangements) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) +
-  geom_bar(stat = "identity") + theme_minimal()
-```
-## Figure 16
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
-                                 personal_attachment_to_agency > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(flexible_work_arrangements > 4) %>% select(groups,flexible_work_arrangements) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) +
-  geom_bar(stat = "identity") + theme_minimal()
-```
-
-These two figures illustrate how flexible work arrangements affect how attached employees are to their agency. When respondents are attached to their agency, *Figure 15*, they tend to overwhelmingly agree that they have flexibility in their work arrangements. In contrast, respondents who deem to have little to no flexibility in their work arrangements the relationship is not as clear cut. Their responses regarding agency attachment are more evenly distributed. Approximately *36% agree*, *41% agree*, and *21% are unsure* about feeling personally attached to their agency. This tells us that although flexibility is positively associated with agency attachment, lack of flexibility doesn't uniformly lead to detachment.
-
-## Figure 17
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
-                                 personal_attachment_to_agency > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(agency_commitment_health_wellbeing <= 3) %>% select(groups,agency_commitment_health_wellbeing) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) +
-  geom_bar(stat = "identity") + theme_minimal()
-```
-
-## Figure 18
-
-```{r, echo = FALSE}
-df %>% mutate(groups = case_when(personal_attachment_to_agency <= 3 ~ "agree",
-                                 personal_attachment_to_agency > 4 ~ "disagree",
-                                 TRUE ~ "don't know")) %>% filter(agency_commitment_health_wellbeing > 4) %>% select(groups,agency_commitment_health_wellbeing) %>% group_by(groups) %>% summarize(total = n()) %>% mutate(percentage = total/sum(total)) %>% ggplot(aes(x = groups, y = percentage, fill = groups)) +
-  geom_bar(stat = "identity") + theme_minimal()
-```
-
-The two figures above illustrate that personal attachment to an agency is closely linked to whether employees perceive their agency as being committed to health and well-being in the workplace. In **Figure 17**, a clear majority of respondents who believe their agency is committed to their health and well-being also report feeling personally attached to their agency. While figure 18 shows us a different picture with 51% of respondents having no personal attachment to their agency when filtered on if their agency is committed to their health and wellbeing. This suggests that when employees feel their well-being is valued, they are more likely to develop a stronger sense of attachment to their organization. 
-
-
-### SPSS results AVE and CR 
-
-
-```{r}
-lambda = c(.717, .539, .608, .793, .766, .768, .601, .595, .555, .708, .772, .761, .753, .796)
-lambda_squared = lambda^2
-epsilon = 1 -lambda_squared 
-
-sum_lambda = sum(lambda)
-sum_lambda_squared = sum(lambda_squared)
-sum_epsilon = sum(epsilon)
-
-N = length(lambda)
-average_variance_extracted = sum_lambda_squared / N
-average_variance_extracted
-composite_reliability = sum_lambda^2/(sum_lambda^2 + sum_epsilon)
-composite_reliability
-
-
+saveRDS(df, file = "df.rds")
 ```
 
 
-### Determinant score
-
-The reason why we calculate the determinant score is to identify if multicollinearity is present. Multicollinearity essentially means that some variables are redundant because they share too much variance. This makes significant variables in our study appear statistically insignificant. Why? When variables share too much variance and this makes it confusing to tell them apart. This messes up how we are able to predict what variables are contributing essentially forcing the model to split in a way that's nearly impossible to differentiate from. 
-
-Looking at the determinant value we can see that it is less than 0.0001, meaning that some of the variables are highly correlated with each other. Lets do some investigation into why that is the case and see if we can make some changes.
-
-Below I pulled up the correlations to identify the pairs of variables where the correlation coefficient r > 0.8. 
-The variables that are highly correlated are:
-**A3a,  A3b,  A3c**
-**A3j and A3m**
-**A3k with A3m**
-**A3l with A3m**
-
-We can get rid of A3c and A3b. A3a encompasses all the information for those two variables 
-We can also get rid of A3m because it is highly correlated with the other variables (A3j,A3k, A3L) but those variables aren't highly correlated with each other.
-
-```{r, echo = FALSE }
-a_questions = na.omit(a_questions)
-factor_subset = a_questions[1:24]
-r = cor(factor_subset)
-determinant_value = det(r)
-determinant_value
-head(r)
-```
-
-```{r, echo = FALSE}
-det_subset = factor_subset %>% select(-c("A3c" , "A3b", "A3m"))
-r = cor(det_subset)
-det(r)
-```
-
-The determinant of the correlation matrix is 8.908885e-07. This tells us there is still a high degree of shared variance although we got rid of some redundant variables. This is better than our original determinant score of 1.293969e-09.
-
-```{r, echo = FALSE}
-det_subset2 = det_subset %>% select(-c("A3j"))
-r = cor(det_subset2)
-det(r)
-```
 
 
-### KMO Statistic and Barletts test
-
-Despite the low determinant score the KMO test which measures the suitability of the data for factor analysis is greater than 0.6. The P value of Bartlett test is < 0.05 which also indicates that a factor analysis may be worthwhile for the dataset. 
-
-```{r, echo = FALSE}
-KMO(r)
-cortest.bartlett(r, n = nrow(det_subset2))
-```
-## Scree test PCA 
-
-Looking at the scree plot 3 components seem to suffice. 
-
-```{r, echo = FALSE}
-scree(r)
-```
-## factor analysis with oblimin rotation
-
-```{r, echo = FALSE}
-oblimin_rotation = principal(r, nfactors = 3, rotate = "oblimin", n.obs = nrow(det_subset2))
-oblimin_rotation
-```
-
-## Factor analysis with varimax rotation
-
-```{r, echo = FALSE}
-principal(r, nfactors = 3, rotate = "varimax", n.obs = nrow(det_subset2))
-```
-## Average variance extracted and CR for varimax rotation 
-
-### Factor 1
-
-```{r, echo = FALSE}
-lambda = c(0.63, 0.53, 0.67, 0.64, 0.75, 0.72, 0.71, 0.76)
-ave_cr(lambda)
-```
-### Factor 2 
-
-```{r, echo = FALSE}
-lambda = c(0.67, 0.80, 0.74, 0.71, 0.66, 0.73, 0.53)
-ave_cr(lambda)
-```
-### Factor 3
-
-```{r, echo = FALSE}
-lambda = c(0.81, 0.83, 0.72)
-ave_cr(lambda)
-```
-
-
-# Confirming Validity 
-
-
-
-## Cronbachs alpha 
-
-Cronbach's alpha shows the internal consistency and measures the accuracy and reliability. This shows us that the variables have a correlation with their component grouping which means they are internally consistent.
-
-All the alpha values are greater than 0.7 which confirms that the variables are internally consistent. 
-
-Alpha values are displayed in order factor 1, factor 2, factor 3.
-
-
-```{r, echo = FALSE}
-factor_1 = det_subset2 %>% select(c("A1b", "A2h", "A3a", "A3d", "A3e", "A3i", "A3k", "A3l", "A4"))
-factor_2 = det_subset2 %>% select(c("A1a", "A2a", "A2b", "A2c", "A2d", "A2e"))
-factor_3 = det_subset2 %>% select(c("A3f", "A3g", "A3h"))
-
-alpha_1 = alpha(factor_1, check.keys = TRUE)
-alpha_1 = alpha_1$total[1]
-
-alpha_2 = alpha(factor_2)
-alpha_2 = alpha_2$total[1]
-
-alpha_3 = alpha(factor_3)
-alpha_3 = alpha_3$total[1]
-
-list(factor_1_alpha = alpha_1, 
-     factor_2_alpha = alpha_2, 
-     factor_3_alpha = alpha_3)
-```
-
-
-## Average variance extracted and CR for oblimin rotation 
-
-**AVE** tells us how much of the information in the survey questions for a factor is actually explained by that factor, compared to how much is just random noise or error.
-
-**Composite Reliability ** tells us how well a group of questions work together to measure the same idea. We want a high CR because that means the questions are consistent with each other. 
-
-```{r, echo = FALSE}
-ave_cr = function(lambda) {
-  lambda_squared = lambda^2
-  epsilon = 1 -lambda_squared 
-  sum_lambda = sum(lambda)
-  sum_lambda_squared = sum(lambda_squared)
-  sum_epsilon = sum(epsilon)
-  N = length(lambda)
-  ave = sum_lambda_squared / N
-  cr = sum_lambda^2/(sum_lambda^2 + sum_epsilon)
-  return(list(AVE = ave, CR = cr ))
-}
-```
-
-### Factor 1 
-
-```{r, echo = FALSE}
-lambda = c(0.66, 0.77, 0.71, 0.55, 0.55, 0.90, 0.79, 0.78, 0.88)
-ave_cr(lambda)
-```
-
-### Factor 2
-
-```{r, echo = FALSE}
-lambda = c(0.64, 0.86, 0.83, 0.78, 0.69, 0.76)
-ave_cr(lambda)
-```
-
-### Factor 3 
-
-```{r}
-lambda = c(0.73, 0.83, 0.57)
-ave_cr(lambda)
-```
 
